@@ -1,7 +1,12 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+import logging
 import torch
 from database import get_patient_data, save_recommendations
+
+# Инициализация логгера
+logging.basicConfig(level=logging.ERROR)
+logger = logging.getLogger(__name__)
 
 # Инициализация контроллера
 router = APIRouter()
@@ -20,12 +25,11 @@ class RecommendationRequest(BaseModel):
 model = torch.load('risk_prediction_model.pth')
 model.eval()
 
-# GET: Получение анализа данных пациента
 @router.get("/api/analysis/{patient_id}", summary="Получить анализ данных пациента")
 async def get_patient_analysis(patient_id: int):
-    # Получение данных пациента из БД
     patient_data = get_patient_data(patient_id)
     if not patient_data:
+        logger.error(f"Данные пациента с ID {patient_id} не найдены.")
         raise HTTPException(status_code=404, detail="Данные пациента не найдены")
 
     # Подготовка данных для модели
